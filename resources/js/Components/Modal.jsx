@@ -1,29 +1,42 @@
 /* This example requires Tailwind CSS v2.0+ */
-import { Fragment, useRef, useState,Component } from 'react'
+import { Fragment, useRef, useState,Component, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { ExclamationIcon } from '@heroicons/react/outline'
 import axios from 'axios'
 
 export default function Modal() {
   const [open, setOpen] = useState(false)
+  const [upload, setUpload] = useState(false)
   const cancelButtonRef = useRef(null)
   const [filename, setFilename] = useState([])
   const [progress, setProgress] = useState()
   const filelist = ['a','b','c']
+  //let data = new FormData();
+  let [data, setData] = useState()
 
   const onFileChange = (e) => {
-    let data = new FormData();
-    data.append('newfile',e.target.files[0])
+    data = new FormData()
     setFilename(filename.concat(e.target.files[0].name))
+    data.append('newfile',e.target.files[0])
     const config = { headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress: progressEvent => {
       setProgress(Math.round( (progressEvent.loaded * 100) / progressEvent.total ))
-      } };
+    }};
     axios.post('/files/store', data, config).then((res)=>{
-        console.log(res)
-    })
+      console.log(res)
+    })    
   }
 
-  const onFileDelete = (e) => {}
+  const onUpload = (e) => {   
+
+    setUpload(true)
+    setOpen(false)
+  }
+
+  const onFileDelete = (x) => {
+    const item = x
+    console.log(x)
+    setFilename(filename.filter(fw => fw !== x))
+  }
 
   return (
     <>
@@ -53,6 +66,7 @@ export default function Modal() {
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
+              <form>
               <Dialog.Panel className="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full">
                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                   <div className="sm:flex sm:items-start">
@@ -68,9 +82,9 @@ export default function Modal() {
                           Are you sure you want to upload a file? Any previous uploaded file will be replaced. This action cannot be undone.
                           <br></br>
                           <input type={'file'} onChange={onFileChange}></input>
-                          {filename.map((item) => {
+                          {filename.map((item,key) => {
                             return(
-                              <li>{item} {progress} <button>X</button></li>
+                              <li key={key}>{item} {progress} <button onClick={() => onFileDelete(item)}>X</button></li>
                             )})}
                         </p>
                       </div>
@@ -81,7 +95,7 @@ export default function Modal() {
                   <button
                     type="button"
                     className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
-                    onClick={() => setOpen(false)}
+                    onClick={(e)=>onUpload(e)}
                   >
                     Upload
                   </button>
@@ -95,6 +109,7 @@ export default function Modal() {
                   </button>
                 </div>
               </Dialog.Panel>
+              </form>
             </Transition.Child>
           </div>
         </div>
